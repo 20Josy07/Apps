@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Master Template: Android Parcial (Java)</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #3ddc84;
+            --text: #f1f5f9;
+            --code-bg: #000000;
+        }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        h2 { color: var(--accent); border-left: 5px solid var(--accent); padding-left: 15px; }
+        .code-block {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            position: relative;
+            margin: 15px 0;
+            border: 1px solid #334155;
+        }
+        pre { margin: 0; font-family: 'Consolas', monospace; font-size: 14px; color: #cbd5e1; }
+        .file-name {
+            background: #334155;
+            color: #fff;
+            padding: 5px 15px;
+            font-size: 12px;
+            border-radius: 5px 5px 0 0;
+            display: inline-block;
+        }
+        .note { background: rgba(59, 130, 246, 0.2); padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+        .tag { color: #f472b6; }
+        .keyword { color: #818cf8; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Guía Completa para el Parcial de Android</h1>
+        <p>BottomNav, Fragments, SharedPreferences, Picasso y CircleImageView (Java)</p>
+    </div>
+
+    <div class="section">
+        <h2>0. Configuración Inicial (Dependencias)</h2>
+        <p>Antes de programar, debes agregar estas librerías en tu archivo de configuración.</p>
+        <div class="file-name">build.gradle (Module: app)</div>
+        <div class="code-block">
+<pre>dependencies {
+    // Para el diseño moderno y Bottom Navigation
+    implementation 'com.google.android.material:material:1.9.0'
+    
+    // Picasso: Para cargar fotos de internet
+    implementation 'com.squareup.picasso:picasso:2.8'
+    
+    // CircleImageView: Para fotos de perfil redondas
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
+}</pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>1. Navegación (Bottom Navigation + Fragments)</h2>
+        <p><strong>Concepto:</strong> El Bottom Navigation cambia los "Fragmentos" dentro de un contenedor en la pantalla principal.</p>
+        
+        <div class="file-name">res/menu/nav_menu.xml</div>
+        <div class="code-block">
+<pre>&lt;menu xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+    &lt;item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home"
+        android:title="Inicio" /&gt;
+    &lt;item
+        android:id="@+id/nav_config"
+        android:icon="@drawable/ic_settings"
+        android:title="Configuración" /&gt;
+&lt;/menu&gt;</pre>
+        </div>
+
+        <div class="file-name">res/layout/activity_main.xml</div>
+        <div class="code-block">
+<pre>&lt;RelativeLayout xmlns:android="..." ...&gt;
+    &lt;!-- Aquí se cargarán los fragmentos --&gt;
+    &lt;FrameLayout
+        android:id="@+id/contenedor_fragmentos"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_nav" /&gt;
+
+    &lt;com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:menu="@menu/nav_menu" /&gt;
+&lt;/RelativeLayout&gt;</pre>
+        </div>
+
+        <div class="file-name">MainActivity.java</div>
+        <div class="code-block">
+<pre>public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        BottomNavigationView nav = findViewById(R.id.bottom_nav);
+        
+        // Cargar fragmento por defecto al abrir la app
+        cambiarFragmento(new HomeFragment());
+
+        nav.setOnItemSelectedListener(item -> {
+            if (item.getItemId() == R.id.nav_home) {
+                cambiarFragmento(new HomeFragment());
+            } else if (item.getItemId() == R.id.nav_config) {
+                cambiarFragmento(new ConfigFragment());
+            }
+            return true;
+        });
+    }
+
+    private void cambiarFragmento(Fragment f) {
+        getSupportFragmentManager().beginTransaction()
+            .replace(R.id.contenedor_fragmentos, f)
+            .commit();
+    }
+}</pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2. SharedPreferences (Persistencia de Datos)</h2>
+        <div class="note">Úsalo para guardar el nombre del usuario, si aceptó términos, o su puntaje.</div>
+        
+        <div class="file-name">SharedPrefManager.java (Clase de Utilidad)</div>
+        <div class="code-block">
+<pre>public class SharedPrefManager {
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+
+    public SharedPrefManager(Context context) {
+        sharedPreferences = context.getSharedPreferences("MiAppPrefs", Context.MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+    }
+
+    public void guardarNombre(String nombre) {
+        editor.putString("nombre_key", nombre);
+        editor.apply(); // Guarda los cambios
+    }
+
+    public String obtenerNombre() {
+        // Devuelve "Invitado" si no hay nada guardado
+        return sharedPreferences.getString("nombre_key", "Invitado");
+    }
+}</pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>3. Imágenes, Internet y Círculos</h2>
+        <p><strong>CircleImageView</strong> recorta la foto automáticamente. <strong>Picasso</strong> la descarga de la web.</p>
+        
+        <div class="file-name">layout_fragment_perfil.xml</div>
+        <div class="code-block">
+<pre>&lt;de.hdodenhof.circleimageview.CircleImageView
+    android:id="@+id/imagen_circular"
+    android:layout_width="150dp"
+    android:layout_height="150dp"
+    android:src="@drawable/foto_placeholder"
+    app:civ_border_width="2dp"
+    app:civ_border_color="#3ddc84" /&gt;</pre>
+        </div>
+
+        <div class="file-name">FragmentPerfil.java</div>
+        <div class="code-block">
+<pre>@Override
+public void onViewCreated(View view, Bundle savedInstanceState) {
+    super.onViewCreated(view, savedInstanceState);
+    
+    CircleImageView profileImg = view.findViewById(R.id.imagen_circular);
+    String url = "https://i.imgur.com/7Yf7T.png"; // URL de internet
+
+    // PICASSO: Descarga, ajusta y pone la imagen en el círculo
+    Picasso.get()
+        .load(url)
+        .placeholder(R.drawable.cargando) // Imagen mientras carga
+        .error(R.drawable.error)       // Imagen si falla el link
+        .into(profileImg);
+}</pre>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
